@@ -16,6 +16,8 @@ namespace VisuallyInvertedMouse
 
         int circleRadius = 50;
         Vector2 oppositePoiont;
+        bool isOverlayVisible = true;
+        float timeSinceToggle = 0f;
 
         public Game1()
         {
@@ -23,6 +25,8 @@ namespace VisuallyInvertedMouse
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             this.InactiveSleepTime = new TimeSpan(0);
+            IsFixedTimeStep = true;
+            TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 240.0); // 240 FPS
 
 
             graphics.PreferredBackBufferHeight = 1080;
@@ -48,10 +52,15 @@ namespace VisuallyInvertedMouse
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.F8))
                 Exit();
 
-
+            timeSinceToggle += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (Keyboard.GetState().IsKeyDown(Keys.F7) && timeSinceToggle >= 0.3f) //0.3s delay
+            {
+                isOverlayVisible = !isOverlayVisible;
+                timeSinceToggle = 0;
+            }
 
             //find the distance between the mouse and the center of the screen to set the radius of the circle
             circleRadius = (int)Vector2.Distance(MousePosition.Position, new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2));
@@ -67,23 +76,28 @@ namespace VisuallyInvertedMouse
         {
             GraphicsDevice.Clear(Color.Black);
             spriteBatch.Begin();
-            
 
-            // TODO: Add your drawing code here
-            spriteBatch.DrawString(font, $"Mouse Position: X:{MousePosition.X} Y:{MousePosition.Y}", new Vector2(10, 20), Color.Red); //Text
-            spriteBatch.DrawString(font, $"Desired-Mouse Position: X:{oppositePoiont.X} Y:{oppositePoiont.Y}", new Vector2(10, 40), Color.Red); //Text
-            spriteBatch.DrawString(font, $"Circle Radius:{circleRadius}", new Vector2(10, 60), Color.Red); //Text
 
-            drawHelper.DrawCircle(new Vector2(screenResolution.MaxX/2,screenResolution.MaxY/2), circleRadius, Color.Red, 360); //circle
+            if (isOverlayVisible)
+            {
+                // TODO: Add your drawing code here
+                spriteBatch.DrawString(font, "Close application with f8 and hide/un-hide overlay with f7", new Vector2(10, 20), Color.Yellow);
+                spriteBatch.DrawString(font, $"Mouse Position: X:{MousePosition.X} Y:{MousePosition.Y}", new Vector2(10, 40), Color.LightSteelBlue); //Text
+                spriteBatch.DrawString(font, $"Desired-Mouse Position: X:{oppositePoiont.X} Y:{oppositePoiont.Y}", new Vector2(10, 60), Color.LightSteelBlue); //Text
+                spriteBatch.DrawString(font, $"Circle Radius:{circleRadius}", new Vector2(10, 80), Color.LightSteelBlue); //Text
 
-            //lines
-            drawHelper.DrawLine(screenResolution.MaxX / 2, screenResolution.MaxY / 2, (int)MousePosition.X, (int)MousePosition.Y, Color.Green); //line
-            drawHelper.DrawLine(screenResolution.MaxX / 2, screenResolution.MaxY / 2, (int)oppositePoiont.X, (int)oppositePoiont.Y, Color.Blue); //opposite line
+                drawHelper.DrawCircle(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), circleRadius, Color.Red, 360); //circle
 
-            //points
-            drawHelper.DrawPoint(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), 3 ,Color.LightCoral); //middle point
-            drawHelper.DrawPoint(oppositePoiont, 3 ,Color.LightCoral); //opposite point
-            drawHelper.DrawPoint(new Vector2((int)MousePosition.X, (int)MousePosition.Y), 3 ,Color.LightCoral); //mouse point
+                //lines
+                drawHelper.DrawLine(screenResolution.MaxX / 2, screenResolution.MaxY / 2, (int)MousePosition.X, (int)MousePosition.Y, Color.Green); //line
+                drawHelper.DrawLine(screenResolution.MaxX / 2, screenResolution.MaxY / 2, (int)oppositePoiont.X, (int)oppositePoiont.Y, Color.Blue); //opposite line
+
+                //points
+                drawHelper.DrawPoint(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), 3, Color.LightCoral); //middle point
+                drawHelper.DrawPoint(oppositePoiont, 3, Color.LightCoral); //opposite point
+                drawHelper.DrawPoint(new Vector2((int)MousePosition.X, (int)MousePosition.Y), 3, Color.LightCoral); //mouse point
+            }
+           
 
 
             base.Draw(gameTime);
