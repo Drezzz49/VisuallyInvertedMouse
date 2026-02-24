@@ -73,5 +73,34 @@ namespace VisuallyInvertedMouse
                 DrawLine((int)x1, (int)y1, (int)x2, (int)y2, color);
             }
         }
+
+
+        /// <summary>
+        /// Draws a solid, filled point (circle) at the specified position.
+        /// </summary>
+        public void DrawPoint(Vector2 position, int radius, Color color)
+        {
+            // We calculate the bounding box of the circle to avoid checking every pixel on screen
+            int left = (int)position.X - radius;
+            int top = (int)position.Y - radius;
+            int diameter = radius * 2;
+
+            for (int x = left; x <= left + diameter; x++)
+            {
+                for (int y = top; y <= top + diameter; y++)
+                {
+                    // Calculate distance from the current pixel to the center
+                    // (x - center.x)^2 + (y - center.y)^2 <= radius^2
+                    float dx = x - position.X;
+                    float dy = y - position.Y;
+                    float distanceSquared = (dx * dx) + (dy * dy);
+
+                    if (distanceSquared <= radius * radius)
+                    {
+                        spriteBatch.Draw(pixel, new Rectangle(x, y, 1, 1), color);
+                    }
+                }
+            }
+        }
     }
 }
