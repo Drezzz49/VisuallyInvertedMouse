@@ -3,6 +3,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace VisuallyInvertedMouse
 {
@@ -18,6 +20,7 @@ namespace VisuallyInvertedMouse
         Vector2 oppositePoiont;
         bool isOverlayVisible = true;
         float timeSinceToggle = 0f;
+        float timeSinceToggleClick = 0f;
 
         public Game1()
         {
@@ -62,15 +65,64 @@ namespace VisuallyInvertedMouse
                 timeSinceToggle = 0;
             }
 
+            //find the opposite point of the mouse position to the center of the screen
+            oppositePoiont = new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2) + (new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2) - MousePosition.Position);
+
             //find the distance between the mouse and the center of the screen to set the radius of the circle
             circleRadius = (int)Vector2.Distance(MousePosition.Position, new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2));
 
-            //find the opposite point of the mouse position to the center of the screen
-            oppositePoiont = new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2) + (new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2) - MousePosition.Position);
+            //float timeSinceToggleClick = 0f;
+            //timeSinceToggleClick += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            //if (Keyboard.GetState().IsKeyDown(Keys.Z) && timeSinceToggle >= 0.3f)
+            //{
+            //    Vector2 mousePosition = new Vector2((int)MousePosition.X, (int)MousePosition.Y);
+
+            //    MouseHelper.SetMousePosition((int)oppositePoiont.X, (int)oppositePoiont.Y);
+            //    MouseHelper.SendLeftClick();
+            //    MouseHelper.SetMousePosition((int)mousePosition.X, (int)mousePosition.Y);
+            //}
+
+
+            
+
+            // Inside Update(GameTime gameTime)
+            const int VK_Z = 0x5A; // Hex code for 'Z'
+            timeSinceToggleClick += (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            // Check if Z is physically down across the whole OS
+            if ((GetAsyncKeyState(VK_Z) & 0x8000) != 0 && timeSinceToggleClick >= 0.3f)
+            {
+                timeSinceToggleClick = 0f;
+
+                // Capture positions locally so the background thread can use them
+                int startX = (int)MousePosition.X;
+                int startY = (int)MousePosition.Y;
+                int targetX = (int)oppositePoiont.X;
+                int targetY = (int)oppositePoiont.Y;
+
+                // Run the click sequence in the background
+                Task.Run(() =>
+                {
+                    MouseHelper.SetMousePosition(targetX, targetY);
+                    System.Threading.Thread.Sleep(3);
+
+                    // Manual Down-Wait-Up to avoid freezing
+                    MouseHelper.SendLeftClick(0); // Just set position, no click yet
+
+                    System.Threading.Thread.Sleep(10);
+                    MouseHelper.SetMousePosition(startX, startY);
+                    MouseHelper.SetMousePosition(startX, startY);
+                    MouseHelper.SetMousePosition(startX, startY);
+                    MouseHelper.SetMousePosition(startX, startY);
+                });
+            }
 
 
             base.Update(gameTime);
         }
+
+        [DllImport("user32.dll")]
+        public static extern short GetAsyncKeyState(int vKey);
 
         protected override void Draw(GameTime gameTime)
         {

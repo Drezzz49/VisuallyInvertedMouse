@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace VisuallyInvertedMouse
 {
@@ -18,17 +19,27 @@ namespace VisuallyInvertedMouse
         /// <summary>
         /// Simulates a full left mouse click (down then up) at the current cursor position.
         /// </summary>
-        public static void SendLeftClick()
+        public static void SendLeftClick(int delayMs = 5)
         {
-            mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+            Thread.Sleep(delayMs); // Short delay to ensure the click is registered
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
         }
 
         /// <summary>
         /// Simulates a full right mouse click at the current cursor position.
         /// </summary>
-        public static void SendRightClick()
+        public static void SendRightClick(int delayMs = 5)
         {
-            mouse_event(MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0);
+            mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0);
+            Thread.Sleep(delayMs); // Short delay to ensure the click is registered
+            mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0);
+        }
+
+        public static void SetMousePosition(int x, int y)
+        {
+            // Move the mouse to the specified coordinates
+            System.Windows.Forms.Cursor.Position = new System.Drawing.Point(x, y);
         }
 
     }
