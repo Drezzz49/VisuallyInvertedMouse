@@ -9,6 +9,7 @@ namespace VisuallyInvertedMouse
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         SpriteFont font;
+        private DrawHelper drawHelper;
 
         public Game1()
         {
@@ -20,13 +21,13 @@ namespace VisuallyInvertedMouse
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
+            drawHelper = new DrawHelper(spriteBatch, GraphicsDevice);
             font = Content.Load<SpriteFont>("font");
 
             // TODO: use this.Content to load your game content here
@@ -48,7 +49,9 @@ namespace VisuallyInvertedMouse
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             // TODO: Add your drawing code here
-            spriteBatch.DrawString(font, "test", new Vector2(0, 0), Color.Red);
+            //spriteBatch.DrawString(font, "test", new Vector2(0, 0), Color.Red); //Text
+
+            drawHelper.DrawCircle(new Vector2(50,50), 50, Color.Red, 360);
 
             base.Draw(gameTime);
             spriteBatch.End();
