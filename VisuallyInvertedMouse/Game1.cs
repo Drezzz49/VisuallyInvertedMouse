@@ -18,6 +18,8 @@ namespace VisuallyInvertedMouse
 
         int circleRadius = 50;
         Vector2 oppositePoiont;
+        Vector2 normalizedOppositePoint;
+        Vector2 middleOfScreen;
         bool isOverlayVisible = true;
         float timeSinceToggle = 0f;
         float timeSinceToggleClick = 0f;
@@ -68,8 +70,13 @@ namespace VisuallyInvertedMouse
             //find the opposite point of the mouse position to the center of the screen
             oppositePoiont = new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2) + (new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2) - MousePosition.Position);
 
+            //normalize the opposite point so it's in the right direction but length of 1
+            normalizedOppositePoint = Vector2.Normalize(oppositePoiont - new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2));
+
             //find the distance between the mouse and the center of the screen to set the radius of the circle
             circleRadius = (int)Vector2.Distance(MousePosition.Position, new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2));
+
+            middleOfScreen = new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2);
 
             //float timeSinceToggleClick = 0f;
             //timeSinceToggleClick += (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -83,7 +90,7 @@ namespace VisuallyInvertedMouse
             //}
 
 
-            
+
 
             // Inside Update(GameTime gameTime)
             const int VK_Z = 0x5A; // Hex code for 'Z'
@@ -138,7 +145,8 @@ namespace VisuallyInvertedMouse
                 spriteBatch.DrawString(font, $"Desired-Mouse Position: X:{oppositePoiont.X} Y:{oppositePoiont.Y}", new Vector2(10, 60), Color.LightSteelBlue); //Text
                 spriteBatch.DrawString(font, $"Circle Radius:{circleRadius}", new Vector2(10, 80), Color.LightSteelBlue); //Text
 
-                drawHelper.DrawCircle(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), circleRadius, Color.Red, 360); //circle
+                drawHelper.DrawCircle(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), circleRadius, Color.Red, 360); //tghe big circle
+                drawHelper.DrawCircle(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), (int)MathF.Floor(Vector2.Distance(middleOfScreen + (normalizedOppositePoint * 50), middleOfScreen)), Color.Red, 360); //the middle circle
 
                 //lines
                 drawHelper.DrawLine(screenResolution.MaxX / 2, screenResolution.MaxY / 2, (int)MousePosition.X, (int)MousePosition.Y, Color.Green); //line
@@ -147,6 +155,7 @@ namespace VisuallyInvertedMouse
                 //points
                 drawHelper.DrawPoint(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), 3, Color.LightCoral); //middle point
                 drawHelper.DrawPoint(oppositePoiont, 3, Color.LightCoral); //opposite point
+                drawHelper.DrawPoint(middleOfScreen + (normalizedOppositePoint*50), 3, Color.LightBlue);
                 drawHelper.DrawPoint(new Vector2((int)MousePosition.X, (int)MousePosition.Y), 3, Color.LightCoral); //mouse point
             }
            
