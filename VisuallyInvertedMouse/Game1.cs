@@ -87,7 +87,7 @@ namespace VisuallyInvertedMouse
             if (isCurrentlyDown)
             {
                 isZPressed = true;
-                if (timeSinceToggleClick >= 0.07f)
+                if (timeSinceToggleClick >= 0.1f)
                 {
                     timeSinceToggleClick = 0f;
 
@@ -96,8 +96,14 @@ namespace VisuallyInvertedMouse
 
                     // Sekvensen sker nu utan paus
                     MouseHelper.SetMousePosition((int)normalizedOppositePoint.X, (int)normalizedOppositePoint.Y);
+                    MouseHelper.SetMousePosition((int)normalizedOppositePoint.X, (int)normalizedOppositePoint.Y);
+                    MouseHelper.SetMousePosition((int)normalizedOppositePoint.X, (int)normalizedOppositePoint.Y);
+                    MouseHelper.mouse_event(0x02, 0, 0, 0, 0); // Down
+                    MouseHelper.mouse_event(0x02, 0, 0, 0, 0); // Down
                     MouseHelper.mouse_event(0x02, 0, 0, 0, 0); // Down
                     Thread.Sleep(5);
+                    MouseHelper.mouse_event(0x04, 0, 0, 0, 0); // Up
+                    MouseHelper.mouse_event(0x04, 0, 0, 0, 0); // Up
                     MouseHelper.mouse_event(0x04, 0, 0, 0, 0); // Up
                     MouseHelper.SetMousePosition(lpPoint.X, lpPoint.Y);
                     MouseHelper.SetMousePosition(lpPoint.X, lpPoint.Y);
@@ -137,10 +143,10 @@ namespace VisuallyInvertedMouse
 
             if (isOverlayVisible)
             {
-                spriteBatch.DrawString(font, "Close application with f8 and hide/un-hide overlay with f7", new Vector2(10, 140), Color.Yellow);
-                spriteBatch.DrawString(font, $"Mouse Position: X:{MousePosition.X} Y:{MousePosition.Y}", new Vector2(10, 160), Color.LightSteelBlue); //Text
-                spriteBatch.DrawString(font, $"Desired-Mouse Position: X:{oppositePoiont.X} Y:{oppositePoiont.Y}", new Vector2(10, 180), Color.LightSteelBlue); //Text
-                spriteBatch.DrawString(font, $"Circle Radius:{circleRadius}", new Vector2(10, 200), Color.LightSteelBlue); //Text
+                spriteBatch.DrawString(font, "Close application with f8 and hide/un-hide overlay with f7", new Vector2(200, 140), Color.Yellow);
+                spriteBatch.DrawString(font, $"Mouse Position: X:{MousePosition.X} Y:{MousePosition.Y}", new Vector2(200, 160), Color.LightSteelBlue); //Text
+                spriteBatch.DrawString(font, $"Desired-Mouse Position: X:{oppositePoiont.X} Y:{oppositePoiont.Y}", new Vector2(200, 180), Color.LightSteelBlue); //Text
+                spriteBatch.DrawString(font, $"Circle Radius:{circleRadius}", new Vector2(200, 200), Color.LightSteelBlue); //Text
 
                 //circles
                 drawHelper.DrawCircle(midPoint, circleRadius, Color.Red, 360); //tghe big circle
