@@ -19,10 +19,11 @@ namespace VisuallyInvertedMouse
         int circleRadius = 50;
         Vector2 oppositePoiont;
         Vector2 normalizedOppositePoint;
-        Vector2 middleOfScreen;
+        Vector2 midPoint;
         bool isOverlayVisible = true;
         float timeSinceToggle = 0f;
         float timeSinceToggleClick = 0f;
+        bool isZPressed = false;
 
         public Game1()
         {
@@ -67,61 +68,58 @@ namespace VisuallyInvertedMouse
                 timeSinceToggle = 0;
             }
 
+            midPoint = new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2 - 50);
             //find the opposite point of the mouse position to the center of the screen
-            oppositePoiont = new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2) + (new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2) - MousePosition.Position);
+            oppositePoiont = midPoint + (midPoint - MousePosition.Position);
 
             //normalize the opposite point so it's in the right direction but length of 1
-            normalizedOppositePoint = Vector2.Normalize(oppositePoiont - new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2));
+            normalizedOppositePoint = Vector2.Normalize(oppositePoiont - midPoint);
+            normalizedOppositePoint = midPoint + (normalizedOppositePoint * 150);
 
             //find the distance between the mouse and the center of the screen to set the radius of the circle
-            circleRadius = (int)Vector2.Distance(MousePosition.Position, new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2));
-
-            middleOfScreen = new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2);
-
-            //float timeSinceToggleClick = 0f;
-            //timeSinceToggleClick += (float)gameTime.ElapsedGameTime.TotalSeconds;
-            //if (Keyboard.GetState().IsKeyDown(Keys.Z) && timeSinceToggle >= 0.3f)
-            //{
-            //    Vector2 mousePosition = new Vector2((int)MousePosition.X, (int)MousePosition.Y);
-
-            //    MouseHelper.SetMousePosition((int)oppositePoiont.X, (int)oppositePoiont.Y);
-            //    MouseHelper.SendLeftClick();
-            //    MouseHelper.SetMousePosition((int)mousePosition.X, (int)mousePosition.Y);
-            //}
+            circleRadius = (int)Vector2.Distance(MousePosition.Position, midPoint);
 
 
-
-
-            // Inside Update(GameTime gameTime)
-            const int VK_Z = 0x5A; // Hex code for 'Z'
+            const int VK_Z = 0x5A;
+            bool isCurrentlyDown = (GetAsyncKeyState(VK_Z) & 0x8000) != 0;
             timeSinceToggleClick += (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-            // Check if Z is physically down across the whole OS
-            if ((GetAsyncKeyState(VK_Z) & 0x8000) != 0 && timeSinceToggleClick >= 0.3f)
+            if (isCurrentlyDown)
             {
-                timeSinceToggleClick = 0f;
-
-                // Capture positions locally so the background thread can use them
-                int startX = (int)MousePosition.X;
-                int startY = (int)MousePosition.Y;
-                int targetX = (int)oppositePoiont.X;
-                int targetY = (int)oppositePoiont.Y;
-
-                // Run the click sequence in the background
-                Task.Run(() =>
+                isZPressed = true;
+                if (timeSinceToggleClick >= 0.07f)
                 {
-                    MouseHelper.SetMousePosition(targetX, targetY);
-                    System.Threading.Thread.Sleep(3);
+                    timeSinceToggleClick = 0f;
 
-                    // Manual Down-Wait-Up to avoid freezing
-                    MouseHelper.SendLeftClick(0); // Just set position, no click yet
+                    // Använd Win32 direkt för att hämta positionen (snabbare än Cursor.Position)
+                    GetCursorPos(out NativePoint lpPoint);
 
-                    System.Threading.Thread.Sleep(10);
-                    MouseHelper.SetMousePosition(startX, startY);
-                    MouseHelper.SetMousePosition(startX, startY);
-                    MouseHelper.SetMousePosition(startX, startY);
-                    MouseHelper.SetMousePosition(startX, startY);
-                });
+                    // Sekvensen sker nu utan paus
+                    MouseHelper.SetMousePosition((int)normalizedOppositePoint.X, (int)normalizedOppositePoint.Y);
+                    MouseHelper.mouse_event(0x02, 0, 0, 0, 0); // Down
+                    Thread.Sleep(5);
+                    MouseHelper.mouse_event(0x04, 0, 0, 0, 0); // Up
+                    MouseHelper.SetMousePosition(lpPoint.X, lpPoint.Y);
+                    MouseHelper.SetMousePosition(lpPoint.X, lpPoint.Y);
+                    MouseHelper.SetMousePosition(lpPoint.X, lpPoint.Y);
+                    MouseHelper.SetMousePosition(lpPoint.X, lpPoint.Y);
+                }
+            }
+            else if (isZPressed)
+            {
+                isZPressed = false;
+
+                GetCursorPos(out NativePoint lpPoint);
+
+                // Flytta till mitten, tryck 3, flytta tillbaka
+                MouseHelper.SetMousePosition((int)midPoint.X, (int)midPoint.Y);
+
+                // Skicka tangent '3'
+                keybd_event(VK_3, 0, 0, 0); // Down
+                Thread.Sleep(5);
+                keybd_event(VK_3, 0, KEYEVENTF_KEYUP, 0); // Up
+
+                MouseHelper.SetMousePosition(lpPoint.X, lpPoint.Y);
             }
 
 
@@ -139,23 +137,23 @@ namespace VisuallyInvertedMouse
 
             if (isOverlayVisible)
             {
-                // TODO: Add your drawing code here
-                spriteBatch.DrawString(font, "Close application with f8 and hide/un-hide overlay with f7", new Vector2(10, 20), Color.Yellow);
-                spriteBatch.DrawString(font, $"Mouse Position: X:{MousePosition.X} Y:{MousePosition.Y}", new Vector2(10, 40), Color.LightSteelBlue); //Text
-                spriteBatch.DrawString(font, $"Desired-Mouse Position: X:{oppositePoiont.X} Y:{oppositePoiont.Y}", new Vector2(10, 60), Color.LightSteelBlue); //Text
-                spriteBatch.DrawString(font, $"Circle Radius:{circleRadius}", new Vector2(10, 80), Color.LightSteelBlue); //Text
+                spriteBatch.DrawString(font, "Close application with f8 and hide/un-hide overlay with f7", new Vector2(10, 140), Color.Yellow);
+                spriteBatch.DrawString(font, $"Mouse Position: X:{MousePosition.X} Y:{MousePosition.Y}", new Vector2(10, 160), Color.LightSteelBlue); //Text
+                spriteBatch.DrawString(font, $"Desired-Mouse Position: X:{oppositePoiont.X} Y:{oppositePoiont.Y}", new Vector2(10, 180), Color.LightSteelBlue); //Text
+                spriteBatch.DrawString(font, $"Circle Radius:{circleRadius}", new Vector2(10, 200), Color.LightSteelBlue); //Text
 
-                drawHelper.DrawCircle(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), circleRadius, Color.Red, 360); //tghe big circle
-                drawHelper.DrawCircle(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), (int)MathF.Floor(Vector2.Distance(middleOfScreen + (normalizedOppositePoint * 50), middleOfScreen)), Color.Red, 360); //the middle circle
+                //circles
+                drawHelper.DrawCircle(midPoint, circleRadius, Color.Red, 360); //tghe big circle
+                drawHelper.DrawCircle(midPoint, (int)MathF.Floor(Vector2.Distance(normalizedOppositePoint, midPoint)), Color.Red, 360); //the middle circle
 
                 //lines
-                drawHelper.DrawLine(screenResolution.MaxX / 2, screenResolution.MaxY / 2, (int)MousePosition.X, (int)MousePosition.Y, Color.Green); //line
-                drawHelper.DrawLine(screenResolution.MaxX / 2, screenResolution.MaxY / 2, (int)oppositePoiont.X, (int)oppositePoiont.Y, Color.Blue); //opposite line
+                drawHelper.DrawLine((int)midPoint.X, (int)midPoint.Y, (int)MousePosition.X, (int)MousePosition.Y, Color.Green); //line
+                drawHelper.DrawLine((int)midPoint.X, (int)midPoint.Y, (int)oppositePoiont.X, (int)oppositePoiont.Y, Color.Blue); //opposite line
 
                 //points
-                drawHelper.DrawPoint(new Vector2(screenResolution.MaxX / 2, screenResolution.MaxY / 2), 3, Color.LightCoral); //middle point
+                drawHelper.DrawPoint(midPoint, 3, Color.LightCoral); //middle point
                 drawHelper.DrawPoint(oppositePoiont, 3, Color.LightCoral); //opposite point
-                drawHelper.DrawPoint(middleOfScreen + (normalizedOppositePoint*50), 3, Color.LightBlue);
+                drawHelper.DrawPoint(normalizedOppositePoint, 3, Color.LightBlue);
                 drawHelper.DrawPoint(new Vector2((int)MousePosition.X, (int)MousePosition.Y), 3, Color.LightCoral); //mouse point
             }
            
@@ -207,5 +205,21 @@ namespace VisuallyInvertedMouse
         const int WS_EX_LAYERED = 0x80000;
         const int LWA_COLORKEY = 0x1; 
         const int WS_EX_TRANSPARENT = 0x20; // The "click-through" flag
+
+        [DllImport("user32.dll")]
+        public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
+
+        const int KEYEVENTF_KEYUP = 0x0002;
+        const byte VK_3 = 0x33; // Virtual Key Code för siffran 3
+
+        [DllImport("user32.dll")]
+        public static extern bool GetCursorPos(out NativePoint lpPoint);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct NativePoint
+        {
+            public int X;
+            public int Y;
+        }
     }
 }
